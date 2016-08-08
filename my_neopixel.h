@@ -1,23 +1,23 @@
 // These values depend on which pin your string is connected to and what board you are using 
 // More info on how to find these at http://www.arduino.cc/en/Reference/PortManipulation
 
-#define PIXEL_PORT  PORTD  // Port of the pin the pixels are connected to
-#define PIXEL_DDR   DDRD   // Port of the pin the pixels are connected to
+#define PIXEL_PORT  PORTD  // Using digital port
+#define PIXEL_DDR   DDRD   // Using digital port
 
-#define PIXEL_PIN   6      // Bit of the pin the pixels are connected to
-#define NUM_COLS    21     // Number of columns in our neopixel matrix
-#define NUM_ROWS    10     // Number of rows in our neopixel matrix
-#define COL_WIDTH   3
+#define PIXEL_PIN   6      // Pin the pixels are connected to
+#define NUM_COLS    21     // Number of columns in our matrix
+#define NUM_ROWS    10     // Number of rows in our matrix
+#define COL_WIDTH   3      // Number of columns per frequency band
 
-#define NUM_BANDS   ( NUM_COLS / COL_WIDTH )
-#define NUM_PIXELS  ( NUM_COLS * NUM_ROWS )
+#define NUM_BANDS   ( NUM_COLS / COL_WIDTH )    // Number of frequency bands
+#define NUM_PIXELS  ( NUM_COLS * NUM_ROWS )     // Number of total pixels
 
 // These are the timing constraints taken mostly from the WS2812 datasheets 
-#define T1H  800    // Width of a 1 bit in ns
-#define T1L  450    // Width of a 1 bit in ns
+#define T1H  800    // High width of a 1 bit in ns
+#define T1L  450    // Low width of a 1 bit in ns
 
-#define T0H  450    // Width of a 0 bit in ns
-#define T0L  800    // Width of a 0 bit in ns
+#define T0H  450    // High width of a 0 bit in ns
+#define T0L  800    // Low width of a 0 bit in ns
 
 #define RESET 5000    // Width of the low gap between bits to cause a frame to latch
 
@@ -34,22 +34,21 @@ void sendBit( bool bitVal ) {
   
     if (  bitVal ) {        // 1 bit
       
-    asm volatile (
-      "sbi %[port], %[bit] \n\t"        // Set the output bit
-      ".rept %[onCycles] \n\t"          // Execute NOPs to delay exactly the specified number of cycles
-      "nop \n\t"
-      ".endr \n\t"
-      "cbi %[port], %[bit] \n\t"        // Clear the output bit
-      ".rept %[offCycles] \n\t"                               // Execute NOPs to delay exactly the specified number of cycles
-      "nop \n\t"
-      ".endr \n\t"
-      ::
-      [port]      "I" (_SFR_IO_ADDR(PIXEL_PORT)),
-      [bit]       "I" (PIXEL_PIN),
-      [onCycles]  "I" (NS_TO_CYCLES(T1H) - 2),    // 1-bit width less overhead  for the actual bit setting, note that this delay could be longer and everything would still work
-      [offCycles] "I" (NS_TO_CYCLES(T1L) - 2)   // Minimum interbit delay. Note that we probably don't need this at all since the loop overhead will be enough, but here for correctness
-
-    );
+        asm volatile (
+          "sbi %[port], %[bit] \n\t"        // Set the output bit
+          ".rept %[onCycles] \n\t"          // Execute NOPs to delay exactly the specified number of cycles
+          "nop \n\t"
+          ".endr \n\t"
+          "cbi %[port], %[bit] \n\t"        // Clear the output bit
+          ".rept %[offCycles] \n\t"         // Execute NOPs to delay exactly the specified number of cycles
+          "nop \n\t"
+          ".endr \n\t"
+          ::
+          [port]      "I" (_SFR_IO_ADDR(PIXEL_PORT)),
+          [bit]       "I" (PIXEL_PIN),
+          [onCycles]  "I" (NS_TO_CYCLES(T1H) - 2),  // 1-bit width less overhead  for the actual bit setting, note that this delay could be longer
+          [offCycles] "I" (NS_TO_CYCLES(T1L) - 2)   // Minimum interbit delay
+        );
                                   
     } else {          // 0 bit
 
@@ -57,23 +56,21 @@ void sendBit( bool bitVal ) {
     // TIMING MATTERS HERE //
     // ********************//
 
-
-    asm volatile (
-      "sbi %[port], %[bit] \n\t"      // Set the output bit
-      ".rept %[onCycles] \n\t"        // Now timing actually matters. The 0-bit must be long enough to be detected but not too long or it will be a 1-bit
-      "nop \n\t"                      // Execute NOPs to delay exactly the specified number of cycles
-      ".endr \n\t"
-      "cbi %[port], %[bit] \n\t"      // Clear the output bit
-      ".rept %[offCycles] \n\t"       // Execute NOPs to delay exactly the specified number of cycles
-      "nop \n\t"
-      ".endr \n\t"
-      ::
-      [port]      "I" (_SFR_IO_ADDR(PIXEL_PORT)),
-      [bit]       "I" (PIXEL_PIN),
-      [onCycles]  "I" (NS_TO_CYCLES(T0H) - 2),
-      [offCycles] "I" (NS_TO_CYCLES(T0L) - 2)
-
-    );
+        asm volatile (
+          "sbi %[port], %[bit] \n\t"      // Set the output bit
+          ".rept %[onCycles] \n\t"        // Now timing actually matters. The 0-bit must be long enough to be detected but not too long or it will be a 1-bit
+          "nop \n\t"                      // Execute NOPs to delay exactly the specified number of cycles
+          ".endr \n\t"
+          "cbi %[port], %[bit] \n\t"      // Clear the output bit
+          ".rept %[offCycles] \n\t"       // Execute NOPs to delay exactly the specified number of cycles
+          "nop \n\t"
+          ".endr \n\t"
+          ::
+          [port]      "I" (_SFR_IO_ADDR(PIXEL_PORT)),
+          [bit]       "I" (PIXEL_PIN),
+          [onCycles]  "I" (NS_TO_CYCLES(T0H) - 2),
+          [offCycles] "I" (NS_TO_CYCLES(T0L) - 2)
+        );
 
     }
 }  
@@ -86,17 +83,6 @@ void sendByte( uint8_t sByte ) {
       sByte <<= 1;                        // and then shift left so bit 6 moves into 7, 5 moves into 6, etc
     }           
 } 
-
-/*
-  The following three functions are the public API:
-  
-  ledSetup() - set up the pin that is connected to the string. Call once at the begining of the program.  
-  setBrightness(byte) - changes the brightness of the neopixels (0(low)->255(high))
-  setMatrix(*byte, byte[]) - Converts a byte array of amplitudes into appropriate pixel orientation for matrix
-  clear() - writes 0's to all pixels to clear the matrix
-  show(*byte) - push updated pixel data to the matrix 
-  
-*/
 
 
 /************ledSetup()******************/
@@ -121,8 +107,40 @@ void setBrightness(uint8_t value)  {
   return;
 }
 
+// I'm using a look up table to select colors based on amplitude
+// I'm using RGB values even though the Neopixel LEDs use GRB values
+// because RGB values are easier to look up online.
+
+uint8_t GYR = {
+               0x00, 0xff, 0x00, // Green
+               0x00, 0xff, 0x00, // Green
+               0x00, 0xff, 0x00, // Green
+               0x00, 0xff, 0x00, // Green
+               0x00, 0xff, 0xff, // Yellow
+               0x00, 0xff, 0xff, // Yellow
+               0x00, 0xff, 0xff, // Yellow
+               0xff, 0x00, 0x00, // Red
+               0xff, 0x00, 0x00, // Red
+               0xff, 0x00, 0x00  // Red
+};
+
+uint8_t Rainbow = {
+               0xbf, 0x00, 0xff, // Violet
+               0x40, 0x00, 0xff, // Blue
+               0x00, 0x40, 0xff, // Lighter Blue
+               0x00, 0xbf, 0xff, // Cyan
+               0x00, 0xff, 0xbf, // Seafoam
+               0x00, 0xff, 0x40, // Light Green
+               0x40, 0xff, 0x00, // Green
+               0xbf, 0xff, 0x00, // Greenish-Yellow
+               0xff, 0xbf, 0x00, // Orange
+               0xff, 0x40, 0x00  // Redish-Orange
+};
+
+
+
 /************setMatrix()******************/
-/// Description: Takes a NUM_COLS-long byte-array consisting of
+/// Description: Takes a <NUM_BANDS>-long byte-array consisting of
 ///              amplitudes for each column of the matrix, and 
 ///              populates the pixels array accordingly
 /// Parameters: Bars - byte array of new amplitudes
@@ -130,72 +148,89 @@ void setBrightness(uint8_t value)  {
 /// Return: NONE
 /*****************************************/
 void setMatrix(uint8_t * Bars, uint8_t pixels[])  {
-  uint8_t k = 0;
-  for( uint8_t i = 0; i < NUM_BANDS; i++) {
-    k = i * 30;
-    if( (i % 2 ) == 0 ) {  // Even numbered band
-      for( uint8_t j = 0; j < NUM_ROWS; j++) {
-        
-        if(j < Bars[i]) {
-          pixels[k] = 0x0;        // G value for column 1 of current band
-          pixels[k+1] = 0x64;     // R value for column 1 of current band
-          pixels[k+2] = 0x0;      // B value for column 1 of current band
 
-          pixels[k+19-j] = 0x0;   // G value for column 2 of current band
-          pixels[k+20-j] = 0x64;  // R value for column 2 of current band
-          pixels[k+21-j] = 0x0;   // B value for column 2 of current band
+  uint16_t k = 0;
+  for( uint8_t i = 0; i < NUM_BANDS; i++ ) {
+    for ( uint8_t j = 0; j < NUM_ROWS*3; j+=3 ) {
+      if( (i % 2 ) == 0 ) {  // Even numbered band
+      
+        k = i * 90;
+        if(j <= Bars[i]) {
 
-          pixels[k+66+j] = 0x0;   // G value for column 3 of current band
-          pixels[k+67+j] = 0x64;  // R value for column 3 of current band
-          pixels[k+68+j] = 0x0;   // B value for column 3 of current band
+          uint8_t R = GYR[j/3];    // Get RGB values from look up table
+	  uint8_t G = GYR[(j/3)+1];
+	  uint8_t B = GYR[(j/3)+2];
+	
+
+          pixels[k]   = G;     // G value for column 1 of current band
+          pixels[k+1] = R;     // R value for column 1 of current band
+          pixels[k+2] = B;     // B value for column 1 of current band
+
+          pixels[k+57-j] = G;  // G value for column 2 of current band
+          pixels[k+58-j] = R;  // R value for column 2 of current band
+          pixels[k+59-j] = B;  // B value for column 2 of current band
+
+          pixels[k+60+j] = G;  // G value for column 3 of current band
+          pixels[k+61+j] = R;  // R value for column 3 of current band
+          pixels[k+62+j] = B;  // B value for column 3 of current band
+
         } else {
-          pixels
-          pixels
-          pixels
-          
-          pixels
-          pixels
-          pixels
-          
-          pixels
-          pixels
-          pixels
+
+          pixels[k]   = 0x00;     // G value for column 1 of current band
+          pixels[k+1] = 0x00;     // R value for column 1 of current band
+          pixels[k+2] = 0x00;     // B value for column 1 of current band
+
+          pixels[k+57-j] = 0x00;  // G value for column 2 of current band
+          pixels[k+58-j] = 0x00;  // R value for column 2 of current band
+          pixels[k+59-j] = 0x00;  // B value for column 2 of current band
+
+          pixels[k+60+j] = 0x00;  // G value for column 3 of current band
+          pixels[k+61+j] = 0x00;  // R value for column 3 of current band
+          pixels[k+62+j] = 0x00;  // B value for column 3 of current band
+
         }
-      }
-    } else {  // Odd numbered band
-      for( uint8_t j = 0; j < NUM_ROWS; j++) {
 
-        if(j < Bars[i]) {
-        pixels
-        pixels
-        pixels
+      } else {  // Odd numbered band
         
-        pixels
-        pixels
-        pixels
+	k = (i * 90) + 27;
+
+        if(j <= Bars[i]) {
+
+          uint8_t R = GYR[j/3];    // Get RGB values from look up table
+	  uint8_t G = GYR[(j/3)+1];
+	  uint8_t B = GYR[(j/3)+2];
+		
+          pixels[k-j]   = G;
+          pixels[k+1-j] = R;
+          pixels[k+2-j] = B;
         
-        pixels
-        pixels
-        pixels
+          pixels[k+3+j] = G;
+          pixels[k+4+j] = R;
+          pixels[k+5+j] = B;
+        
+          pixels[k+60-j] = G;
+          pixels[k+61-j] = R;
+          pixels[k+62-j] = B;
         
         } else {
-          pixels[WHATEVER] = 0;
-          pixels[WHATEVER+1] = 0;
-          pixels[WHATEVER+2] = 0;
-          
-          pixels
-          pixels
-          pixels
-          
-          pixels
-          pixels
-          pixels
+
+          pixels[k-j]   = 0x00;
+          pixels[k+1-j] = 0x00;
+          pixels[k+2-j] = 0x00;
+        
+          pixels[k+3+j] = 0x00;
+          pixels[k+4+j] = 0x00;
+          pixels[k+5+j] = 0x00;
+        
+          pixels[k+60-j] = 0x00;
+          pixels[k+61-j] = 0x00;
+          pixels[k+62-j] = 0x00;
         }
         
       }
     }
   }
-  
+
   return;
 }
 

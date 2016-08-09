@@ -108,8 +108,9 @@ void setBrightness(uint8_t value)  {
 }
 
 // I'm using a look up table to select colors based on amplitude
-// I'm using RGB values even though the Neopixel LEDs use GRB values
+// RGB values are used even though the Neopixel LEDs use GRB values
 // because RGB values are easier to look up online.
+// This is accounted for in the setMatrix function.
 
 uint8_t GYR = {
                0x00, 0xff, 0x00, // Green
@@ -251,7 +252,6 @@ void Clear()  {
   _delay_us( (RESET / 1000UL) + 1);       // Round up since the delay must be _at_least_ this long (too short might not work, too long not a problem)
 }
 
-// Just wait long enough without sending any bits to cause the pixels to latch and display the last sent frame
 
 /************show()******************/
 /// Description: "Refresh" the neopixel matrix with

@@ -20,8 +20,6 @@ Description: This is the main program to control neopixel
  */
  
 void setup() {
-    pinMode(PIXEL_PIN, OUTPUT);
-    
     // Initialize Neopixels
     ledSetup();
     setBrightness(128);
@@ -30,7 +28,8 @@ void setup() {
     TIMSK0 = 0;    // Turn off timer0 for lower jitter
 
     // Eventually need to set up an analog pin to receive audio
-    // and maybe a pin to adjust gain
+    // And maybe a pin to adjust gain
+    // Also maybe a pin to select which color scheme to use (see my_neopixel.h)
 }
 
 
@@ -40,7 +39,9 @@ void loop() {
 
     // This is just to test functionality...
     for(uint8_t i = 0; i < NUM_BANDS; i++) {
+        
         for(uint8_t k = 0; k < NUM_BANDS; k++) {newBars[k] = 0;} // Clear array
+        
         for(uint8_t j = 0; j < NUM_ROWS; j++) {
             newBars[i] = j;
             setMatrix(newBars, pixels);

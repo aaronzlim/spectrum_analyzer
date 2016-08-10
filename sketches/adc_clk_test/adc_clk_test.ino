@@ -25,7 +25,7 @@ void setup() {
     ADCSRA &= ~PS_128;    // Remove bits set by the Arduino Library
     
     // Choose a prescaler
-    ADCSRA |= PS_32;      // Should get 38kHz sample rate
+    ADCSRA |= PS_16;      // Should get 38kHz sample rate
 }
 
 
@@ -45,7 +45,7 @@ void loop() {
     for(i = 0; i < N; i++) {
         Serial.print(values[i]);
         Serial.print(" del_t = ");
-        Serial.print(stop_time[i] - start_time[i]);
+        Serial.print(stop_times[i] - start_times[i]);
         Serial.print(" us\n");
     }
     delay(10000);

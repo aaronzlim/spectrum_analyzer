@@ -112,8 +112,7 @@ void setBrightness(uint8_t value)  {
 // because RGB values are easier to look up online.
 // This is accounted for in the setMatrix function.
 
-uint8_t GYR = {
-               0x00, 0xff, 0x00, // Green
+uint8_t GYR = {0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
@@ -125,8 +124,7 @@ uint8_t GYR = {
                0xff, 0x00, 0x00  // Red
 };
 
-uint8_t Rainbow = {
-               0xbf, 0x00, 0xff, // Violet
+uint8_t Rainbow = {0xbf, 0x00, 0xff, // Violet
                0x40, 0x00, 0xff, // Blue
                0x00, 0x40, 0xff, // Lighter Blue
                0x00, 0xbf, 0xff, // Cyan

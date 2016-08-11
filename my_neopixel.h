@@ -12,14 +12,15 @@
 #define NUM_BANDS   ( NUM_COLS / COL_WIDTH )    // Number of frequency bands
 #define NUM_PIXELS  ( NUM_COLS * NUM_ROWS )     // Number of total pixels
 
-// These are the timing constraints taken mostly from the WS2812 datasheets 
-#define T1H  800    // High width of a 1 bit in ns
-#define T1L  450    // Low width of a 1 bit in ns
+// These are the timing constraints taken mostly from the WS2812 datasheets
+// and are very conservative, meant for functionality and not speed
+#define T1H  900    // High width of a 1 bit in ns
+#define T1L  600    // Low width of a 1 bit in ns
 
-#define T0H  450    // High width of a 0 bit in ns
-#define T0L  800    // Low width of a 0 bit in ns
+#define T0H  400    // High width of a 0 bit in ns
+#define T0L  900    // Low width of a 0 bit in ns
 
-#define RESET 5000    // Width of the low gap between bits to cause a frame to latch
+#define RESET 6000    // Width of the low gap between bits to cause a frame to latch
 
 // Here are some convience defines for using nanoseconds specs to generate actual CPU delays
 #define NS_PER_SEC (1000000000L)
@@ -112,7 +113,8 @@ void setBrightness(uint8_t value)  {
 // because RGB values are easier to look up online.
 // This is accounted for in the setMatrix function.
 
-uint8_t GYR = {0x00, 0xff, 0x00, // Green
+uint8_t GYR[30] = {
+               0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
@@ -124,7 +126,8 @@ uint8_t GYR = {0x00, 0xff, 0x00, // Green
                0xff, 0x00, 0x00  // Red
 };
 
-uint8_t Rainbow = {0xbf, 0x00, 0xff, // Violet
+uint8_t Rainbow[30] = {
+               0xbf, 0x00, 0xff, // Violet
                0x40, 0x00, 0xff, // Blue
                0x00, 0x40, 0xff, // Lighter Blue
                0x00, 0xbf, 0xff, // Cyan
@@ -154,16 +157,15 @@ void setMatrix(uint8_t * Bars, uint8_t pixels[])  {
       if( (i % 2 ) == 0 ) {  // Even numbered band
       
         k = i * 90;
-        if(j <= Bars[i]) {
+        if( (j/3) < Bars[i]) {
 
-          uint8_t R = GYR[j/3];    // Get RGB values from look up table
-	  uint8_t G = GYR[(j/3)+1];
-	  uint8_t B = GYR[(j/3)+2];
-	
+          uint8_t R = GYR[j];    // Get RGB values from look up table
+	        uint8_t G = GYR[j+1];
+	        uint8_t B = GYR[j+2];
 
-          pixels[k]   = G;     // G value for column 1 of current band
-          pixels[k+1] = R;     // R value for column 1 of current band
-          pixels[k+2] = B;     // B value for column 1 of current band
+          pixels[k+j]   = G;     // G value for column 1 of current band
+          pixels[k+1+j] = R;     // R value for column 1 of current band
+          pixels[k+2+j] = B;     // B value for column 1 of current band
 
           pixels[k+57-j] = G;  // G value for column 2 of current band
           pixels[k+58-j] = R;  // R value for column 2 of current band
@@ -175,9 +177,9 @@ void setMatrix(uint8_t * Bars, uint8_t pixels[])  {
 
         } else {
 
-          pixels[k]   = 0x00;     // G value for column 1 of current band
-          pixels[k+1] = 0x00;     // R value for column 1 of current band
-          pixels[k+2] = 0x00;     // B value for column 1 of current band
+          pixels[k+j]   = 0x00;     // G value for column 1 of current band
+          pixels[k+1+j] = 0x00;     // R value for column 1 of current band
+          pixels[k+2+j] = 0x00;     // B value for column 1 of current band
 
           pixels[k+57-j] = 0x00;  // G value for column 2 of current band
           pixels[k+58-j] = 0x00;  // R value for column 2 of current band
@@ -191,13 +193,13 @@ void setMatrix(uint8_t * Bars, uint8_t pixels[])  {
 
       } else {  // Odd numbered band
         
-	k = (i * 90) + 27;
+	      k = (i * 90) + 27;
 
-        if(j <= Bars[i]) {
+        if( (j/3) < Bars[i]) {
 
-          uint8_t R = GYR[j/3];    // Get RGB values from look up table
-	  uint8_t G = GYR[(j/3)+1];
-	  uint8_t B = GYR[(j/3)+2];
+          uint8_t R = GYR[j];    // Get RGB values from look up table
+	        uint8_t G = GYR[j+1];
+	        uint8_t B = GYR[j+2];
 		
           pixels[k-j]   = G;
           pixels[k+1-j] = R;

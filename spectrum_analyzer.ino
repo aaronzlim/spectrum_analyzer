@@ -27,26 +27,87 @@ void setup() {
 
     TIMSK0 = 0;    // Turn off timer0 for lower jitter
 
+    Serial.begin(9600); // USED FOR DEBUGGING
+    while(!Serial);     // Need to get rid of this when complete
+
     // Eventually need to set up an analog pin to receive audio
     // And maybe a pin to adjust gain
     // Also maybe a pin to select which color scheme to use (see my_neopixel.h)
-}
+    
+// TESTING --------------------------------------------------------------------------
 
-
-void loop() {
     uint8_t pixels[3*NUM_PIXELS]; // Each neopixel needs 3 bytes of data for GRB values
     uint8_t newBars[NUM_BANDS] = { }; // Array to hold current value for each band
 
     // This is just to test functionality...
+    for(unsigned int i = 0; i < NUM_BANDS; i++) {
+        newBars[i] = i+3;
+    }
+    unsigned long start = micros();
+    setMatrix(newBars, pixels);
+    unsigned long sto = micros();
+
+    Serial.print("setMatrix() took "); Serial.print(sto-start); Serial.print(" us");
+    
+
+    unsigned int k = 0;
     for(uint8_t i = 0; i < NUM_BANDS; i++) {
+        Serial.print("\n------------------ BAND ");
+        Serial.print(i);
+        Serial.print(" ------------------\n");
+        for ( unsigned int j = 0; j < NUM_ROWS*3; j+=3 ) {
+            if( (i % 2 ) == 0 ) {  // Even numbered band
+
+                k = i * 90;
+
+                Serial.print("(");
+                Serial.print(pixels[k+j]); 
+                Serial.print(",");
+                Serial.print(pixels[k+1+j]); 
+                Serial.print(",");
+                Serial.print(pixels[k+2+j]);
+                Serial.print(")\t(");
+                Serial.print(pixels[k+57-j]); 
+                Serial.print(",");
+                Serial.print(pixels[k+58-j]);
+                Serial.print(",");
+                Serial.print(pixels[k+59-j]);
+                Serial.print(")\t("); 
+                Serial.print(pixels[k+60+j]);
+                Serial.print(",");
+                Serial.print(pixels[k+61+j]);
+                Serial.print(",");Serial.print(pixels[k+62+j]);
+                Serial.print(")\n");
         
-        for(uint8_t k = 0; k < NUM_BANDS; k++) {newBars[k] = 0;} // Clear array
+            } else {  // Odd numbered band
         
-        for(uint8_t j = 0; j < NUM_ROWS; j++) {
-            newBars[i] = j;
-            setMatrix(newBars, pixels);
-            show(pixels);
-            delay(500);
+                k = (i * 90) + 27;
+                Serial.print("(");
+                Serial.print(pixels[k-j]);
+                Serial.print(",");
+                Serial.print(pixels[k+1-j]);
+                Serial.print(",");
+                Serial.print(pixels[k+2-j]);
+                Serial.print(")\t(");
+                Serial.print(pixels[k+3+j]);
+                Serial.print(",");
+                Serial.print(pixels[k+4+j]);
+                Serial.print(",");
+                Serial.print(pixels[k+5+j]);
+                Serial.print(")\t(");
+                Serial.print(pixels[k+60-j]);
+                Serial.print(",");
+                Serial.print(pixels[k+61-j]);
+                Serial.print(",");
+                Serial.print(pixels[k+62-j]);
+                Serial.print(")\n");
+        
+            }
         }
     }
 }
+
+void loop() {
+  
+}
+

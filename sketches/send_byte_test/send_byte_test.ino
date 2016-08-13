@@ -1,32 +1,25 @@
 #include "my_neopixel.h"
 
 void setup() {
-  DDRD |= B10000000;  // Make pin 6 an output
-  PORTD |= B00100000; // set all digital pins low
+  ledSetup();
 }
 
-unsigned long int t = 0;
+#define DELAY 1000 // 1 second
+#define DELAY_U 6  // 6 microseconds
+
 void loop() {
-  for(t = 0; t < 250000; t++) {
-    mySendBit();
-  }
-  delay(2000);
-}
-
-void mySendBit() {
-  asm volatile (
-          "sbi %[port], %[BIT] \n\t"        // Set the output bit
-          ".rept %[onCycles] \n\t"          // Execute NOPs to delay exactly the specified number of cycles
-          "nop \n\t"
-          ".endr \n\t"
-          "cbi %[port], %[BIT] \n\t"        // Clear the output bit
-          ".rept %[offCycles] \n\t"         // Execute NOPs to delay exactly the specified number of cycles
-          "nop \n\t"
-          ".endr \n\t"
-          ::
-          [port]      "I" (_SFR_IO_ADDR(PIXEL_PORT)),
-          [BIT]       "I" (TOGGLE_BIT),
-          [onCycles]  "I" (63),  // 1-bit width less overhead  for the actual bit setting, note that this delay could be longer
-          [offCycles] "I" (63)   // Minimum interbit delay
-        );
+  cli();
+  sendByte(0);     // G = 0
+  sendByte(0x30);  // R = 128
+  sendByte(0);     // B = 0
+  _delay_us(DELAY_U);
+  sei();
+  delay(DELAY);
+  cli();
+  sendByte(0);
+  sendByte(0);
+  sendByte(0);
+  _delay_us(DELAY_U);
+  sei();
+  delay(DELAY);
 }

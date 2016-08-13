@@ -1,0 +1,22 @@
+{
+  signal: [
+    {name: 'Strobe', wave:      '1....0..|10..|1|0..1'},
+    {name: 'Output', wave:      '0....x.5|0x.5|0|x.50', data:["63Hz", "160Hz", "16kHz"]},
+    {name: 'Reset', wave:       '010..............|.........|...|.........', 
+     data:["High 100ns min", "High 100ns"], period: 0.5, phase: 1},
+    {name: '', wave: '', node:'.a.....b...........................................c', period: 0.1, phase: .3},
+    {name: '', wave: '', node:'.d...e.f.gh'}
+  ],
+  edge: ['a<->b 100ns',
+         'b<->c Reset Delay = 72us',
+         'e<->f Settling Time 36us',
+         'g<->h 18us'
+        ],
+  head: { text: "MSGEQ7 Timing Diagram"
+  },
+  foot:{ text: "Note: All times are minimum values",
+        tick: -2
+  },
+  config: { hscale: 2
+  }
+}

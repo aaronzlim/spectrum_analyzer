@@ -23,6 +23,7 @@ void setup() {
     // Initialize Neopixels
     ledSetup();
     setBrightness(50);
+    setColorScheme(Rainbow);
     Clear();
     TIMSK0 = 0;    // Turn off timer0 for lower jitter
 }
@@ -37,15 +38,5 @@ uint8_t GRB_vals[NUM_PIXELS*3] = {}; // Array to hold pixel GRB values
 unsigned long interval = 2000;  // Waiting interval
 
 void loop() {
-  
-  uint8_t newBands[NUM_BANDS] = {};
-  for(i = 0; i < NUM_BANDS; i++) {
-    newBands[i] = i+2;
-  }
 
-  setMatrix(newBands, GRB_vals);
-  show(GRB_vals);
-  _delay_ms(1000);
-  Clear();
-  _delay_ms(500);
 }

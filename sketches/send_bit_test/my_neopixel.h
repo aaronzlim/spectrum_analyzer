@@ -62,6 +62,9 @@ const uint8_t _DDRD_BV[8] = {    // DDRD Bit Value look up table
 
 // These are the timing constraints taken mostly from the WS2812b datasheets.
 // Check these values to make sure the timing works out
+
+// 800 450 400 850 5000
+
 #define T1H  800    // High width of a 1 bit in ns
 #define T1L  450    // Low width of a 1 bit in ns
 
@@ -162,31 +165,41 @@ void setBrightness(uint8_t value)  {
 // because RGB values are easier to look up online.
 // This is accounted for in the setMatrix function.
 
-uint8_t GYR[30] = {
+// You can add your own look up tables and set them using the setColorScheme()
+// function defined below.
+// NOTE: The size of your look up table must be (NUM_ROWS * COL_WIDTH)
+
+uint8_t GYR[NUM_ROWS * COL_WIDTH] = {
                0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
                0x00, 0xff, 0x00, // Green
-               0xff, 0xff, 0x00, // Yellow
-               0xff, 0xff, 0x00, // Yellow
-               0xff, 0xff, 0x00, // Yellow
+               0xff, 0x75, 0x00, // Yellow
+               0xff, 0x75, 0x00, // Yellow
+               0xff, 0x75, 0x00, // Yellow
                0xff, 0x00, 0x00, // Red
                0xff, 0x00, 0x00, // Red
                0xff, 0x00, 0x00  // Red
 };
 
-uint8_t Rainbow[30] = {
+uint8_t Rainbow[NUM_ROWS * COL_WIDTH] = {
                0xbf, 0x00, 0xff, // Violet
                0x40, 0x00, 0xff, // Blue
-               0x00, 0x40, 0xff, // Lighter Blue
                0x00, 0xbf, 0xff, // Cyan
                0x00, 0xff, 0xbf, // Seafoam
-               0x00, 0xff, 0x40, // Light Green
                0x40, 0xff, 0x00, // Green
                0xbf, 0xff, 0x00, // Greenish-Yellow
-               0xff, 0xbf, 0x00, // Orange
-               0xff, 0x40, 0x00  // Redish-Orange
+               0xff, 0xd7, 0x00, // Gold
+               0xff, 0x55, 0x00, // Orange
+               0xff, 0x10, 0x00, // Redish-Orange
+               0xff, 0x00, 0x00  // Red
 };
+
+
+uint8_t * color_scheme_ptr = GYR; // Default color scheme
+void setColorScheme(uint8_t * scheme) {
+  color_scheme_ptr = scheme;
+}
 
 
 // This next part was tricky because my setup involves each frequency band being three
@@ -244,11 +257,11 @@ void setMatrix(uint8_t * Bars, uint8_t pixels[])  {
       if( (i % 2 ) == 0 ) {  // Even numbered band
       
         k = i * 90;
-        if( (j/3) < Bars[i]) {
+        if( (j/3) < Bars[i] ) {
 
-          uint8_t R = GYR[j];    // Get RGB values from look up table
-	      uint8_t G = GYR[j+1];
-	      uint8_t B = GYR[j+2];
+          uint8_t R = color_scheme_ptr[j];    // Get RGB values from look up table
+	        uint8_t G = color_scheme_ptr[j+1];
+	        uint8_t B = color_scheme_ptr[j+2];
 
           pixels[k+j]   = G;     // G value for column 1 of current band
           pixels[k+1+j] = R;     // R value for column 1 of current band
@@ -284,9 +297,9 @@ void setMatrix(uint8_t * Bars, uint8_t pixels[])  {
 
         if( (j/3) < Bars[i]) {
 
-          uint8_t R = GYR[j];    // Get RGB values from look up table
-	      uint8_t G = GYR[j+1];
-	      uint8_t B = GYR[j+2];
+          uint8_t R = color_scheme_ptr[j];    // Get RGB values from look up table
+	        uint8_t G = color_scheme_ptr[j+1];
+	        uint8_t B = color_scheme_ptr[j+2];
 		
           pixels[k-j]   = G;
           pixels[k+1-j] = R;
